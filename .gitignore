@@ -1,9 +1,0 @@
-__pycache__/
-*.pyc
-data.db
-commands.log
-.env
-env/
-venv/
-.vscode/
-.idea/
