@@ -1,0 +1,42 @@
+{
+    "help": {
+      "patterns": [
+        "(?i)\\bпомощ\\b",
+        "(?i)\\bhelp\\b",
+        "(?i)\\bпомогни\\b"
+      ],
+      "response": "Команди: Добави клуб <Име>, Покажи всички клубове, Изтрий клуб <Име>, помощ, изход"
+    },
+    "exit": {
+      "patterns": [
+        "(?i)\\bизход\\b",
+        "(?i)\\bexit\\b",
+        "(?i)\\bquit\\b"
+      ],
+      "response": "Довиждане!"
+    },
+    "add_club": {
+      "patterns": [
+        "(?i)\\bдобави (?:клуб )?(?P<name>.+)",
+        "(?i)\\bдобави_клуб (?P<name>.+)",
+        "(?i)\\badd club (?P<name>.+)"
+      ],
+      "response": "Attempting to add club..."
+    },
+    "list_clubs": {
+      "patterns": [
+        "(?i)\\bпокажи (?:всички )?клубове\\b",
+        "(?i)\\bсписък (?:на )?клубовете\\b",
+        "(?i)\\blist clubs\\b"
+      ],
+      "response": "Listing clubs..."
+    },
+    "delete_club": {
+      "patterns": [
+        "(?i)\\bизтрий (?:клуб )?(?P<name>.+)",
+        "(?i)\\bпремахни (?:клуб )?(?P<name>.+)",
+        "(?i)\\bdelete club (?P<name>.+)"
+      ],
+      "response": "Attempting to delete club..."
+    }
+  }
