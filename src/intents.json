@@ -38,5 +38,41 @@
         "(?i)\\bdelete club (?P<name>.+)"
       ],
       "response": "Attempting to delete club..."
+    },
+    "add_player": {
+      "patterns": [
+        "(?i)добави играч (?P<name>.+) в клуб (?P<club>.+) на позиция (?P<position>GK|DF|MF|FW) с номер (?P<number>\\d+) и националност (?P<nationality>.+) и дата на раждане (?P<birth_date>\\d{4}-\\d{2}-\\d{2}) и статус (?P<status>active|injured|retired)",
+        "(?i)добави играч (?P<name>.+) в (?P<club>.+) позиция (?P<position>GK|DF|MF|FW) номер (?P<number>\\d+)"
+      ],
+      "response": "Attempting to add player..."
+    },
+
+    "list_players": {
+      "patterns": [
+        "(?i)покажи всички играчи",
+        "(?i)покажи играчи на клуб (?P<club>.+)"
+      ],
+      "response": "Listing players..."
+    },
+
+    "update_player_number": {
+      "patterns": [
+        "(?i)смени номер на (?P<name>.+) на (?P<number>\\d+)"
+      ],
+      "response": "Updating player number..."
+    },
+
+    "update_player_status": {
+      "patterns": [
+        "(?i)смени статус на (?P<name>.+) на (?P<status>active|injured|retired)"
+      ],
+      "response": "Updating player status..."
+    },
+
+    "delete_player": {
+      "patterns": [
+        "(?i)изтрий играч (?P<name>.+)"
+      ],
+      "response": "Deleting player..."
     }
   }
