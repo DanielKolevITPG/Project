@@ -46,7 +46,6 @@
       ],
       "response": "Attempting to add player..."
     },
-
     "list_players": {
       "patterns": [
         "(?i)покажи всички играчи",
@@ -54,25 +53,47 @@
       ],
       "response": "Listing players..."
     },
-
     "update_player_number": {
       "patterns": [
         "(?i)смени номер на (?P<name>.+) на (?P<number>\\d+)"
       ],
       "response": "Updating player number..."
     },
-
     "update_player_status": {
       "patterns": [
         "(?i)смени статус на (?P<name>.+) на (?P<status>active|injured|retired)"
       ],
       "response": "Updating player status..."
     },
-
     "delete_player": {
       "patterns": [
         "(?i)изтрий играч (?P<name>.+)"
       ],
       "response": "Deleting player..."
+    },
+    "transfer_player": {
+      "patterns": [
+        "(?i)трансфер (?P<player>.+) от (?P<from_club>.+) в (?P<to_club>.+) (?P<date>\\d{4}-\\d{2}-\\d{2})(?:\\s+сума\\s+(?P<fee>\\d+))?",
+        "(?i)трансферирай (?P<player>.+) от (?P<from_club>.+) в (?P<to_club>.+) (?P<date>\\d{4}-\\d{2}-\\d{2})(?:\\s+сума\\s+(?P<fee>\\d+))?"
+      ],
+      "response": "Processing transfer..."
+    },
+    "show_transfers_club": {
+      "patterns": [
+        "(?i)^покажи трансфери на клуб (?P<club>.+)",
+        "(?i)^трансфери на клуб (?P<club>.+)",
+        "(?i)покажи трансфери на клуб (?P<club>.+)",
+        "(?i)трансфери на клуб (?P<club>.+)"
+      ],
+      "response": "Showing club transfers..."
+    },
+    "show_transfers_player": {
+      "patterns": [
+        "(?i)^покажи трансфери на (?P<player>.+)",
+        "(?i)^трансфери на (?P<player>.+)",
+        "(?i)покажи трансфери на (?P<player>.+)",
+        "(?i)трансфери на (?P<player>.+)"
+      ],
+      "response": "Showing player transfers..."
     }
   }
