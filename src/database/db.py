@@ -8,7 +8,7 @@ _lock = threading.Lock()
 _conn: Optional[sqlite3.Connection] = None
 
 def _default_db_path() -> str:
-    base = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    base = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     return os.path.join(base, "data.db")
 
 def get_connection(db_path: Optional[str] = None) -> sqlite3.Connection:

@@ -1,4 +1,4 @@
-from db import execute_query
+from database.db import execute_query
 
 
 def add_club(name):
