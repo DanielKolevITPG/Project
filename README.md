@@ -1,24 +1,29 @@
-# Football Manager — Stage 3 (Players CRUD + Filtering)
+# Football Manager — Stage 4 (Transfers)
 
-Simple command-line chatbot to manage football clubs and players (SQLite backend).
+Simple command-line chatbot to manage football clubs, players and transfers (SQLite backend).
 
 ## Structure
 - src/
-  - main.py         — entrypoint, main loop and logging
-  - db.py           — centralized DB connection + query helper
-  - clubs_service.py— Clubs CRUD operations and validation
-  - players_service.py — Players CRUD operations and validation
-  - chatbot.py      — intent detection (regex) and handlers
-  - intents.json    — regex intent patterns and responses
+  - main.py           — entrypoint, main loop and logging
+  - intents.json      — regex intent patterns and responses
+  - chatbot/
+    - nlu.py          — intent detection (regex)
+    - router.py       — intent routing and handlers
+  - services/
+    - clubs_service.py    — Clubs CRUD operations
+    - players_service.py — Players CRUD operations
+    - transfers_service.py — Transfers with business logic
+  - database/
+    - db.py           — centralized DB connection + query helper
+  - utils/
+    - logger.py       — logging utilities
 - sql/
-  - schema.sql      — DB schema (clubs and players tables)
-- tests/
-  - test_players_service.py — Unit tests for players module
+  - schema.sql        — DB schema (clubs, players, transfers tables)
 - data/
-  - test_players.sql — Sample test data
-- commands.log      — runtime log (created at first run)
-- data.db           — SQLite database (created at first run)
-- dialogue_example.md — Example conversations demonstrating all features
+  - test_transfers.sql — Sample test data
+- commands.log       — runtime log (created at first run)
+- data.db            — SQLite database (created at first run)
+- dialogue_example.md — Example conversations
 
 ## Installation
 1. Ensure Python 3.8+
@@ -29,7 +34,9 @@ Simple command-line chatbot to manage football clubs and players (SQLite backend
 ## How to run
 From project root:
 - Windows (PowerShell or cmd):
-  python src\main.py
+  ```bash
+  python src/main.py
+  ```
 
 The first run creates data.db and applies schema.
 
@@ -48,8 +55,14 @@ The first run creates data.db and applies schema.
 - `Смени статус на <име> на <active|injured|retired>` — Update player's status
 - `Изтрий играч <име>` — Delete a player
 
+### Transfers
+- `Трансфер <име> от <клуб> в <клуб> <YYYY-MM-DD>` — Transfer a player
+- `Трансфер <име> от <клуб> в <клуб> <YYYY-MM-DD> сума <сума>` — Transfer with fee
+- `Покажи трансфери на <име>` — Show transfer history for a player
+- `Покажи трансфери на клуб <клуб>` — Show all transfers for a club
+
 ### System
-- `помощ` or `help` — Show help
+- `помощ` or `help` — Show help (all commands)
 - `изход` or `exit` — Exit the application
 
 ## Database Schema
@@ -66,102 +79,56 @@ The first run creates data.db and applies schema.
 - `position` TEXT NOT NULL CHECK(position IN ('GK', 'DF', 'MF', 'FW'))
 - `number` INTEGER NOT NULL CHECK(number >= 1 AND number <= 99)
 - `status` TEXT NOT NULL DEFAULT 'active'
-- `club_id` INTEGER NOT NULL (FK to clubs.id)
-- Index on `club_id` for efficient filtering
+- `club_id` INTEGER (FK to clubs.id, can be NULL)
+- Index on `club_id`
 
-## Validation Rules
+### transfers
+- `id` INTEGER PRIMARY KEY AUTOINCREMENT
+- `player_id` INTEGER NOT NULL (FK to players.id)
+- `from_club_id` INTEGER (FK to clubs.id, can be NULL for first club)
+- `to_club_id` INTEGER NOT NULL (FK to clubs.id)
+- `transfer_date` TEXT NOT NULL (YYYY-MM-DD)
+- `fee` INTEGER (optional)
+- `note` TEXT (optional)
+- CHECK (to_club_id != from_club_id)
+- Indexes on player_id, from_club_id, to_club_id, transfer_date
 
-### Player
-- **full_name**: Required, non-empty string
-- **birth_date**: Required, valid date in the past (YYYY-MM-DD)
-- **nationality**: Required, non-empty string
-- **position**: Required, one of: GK (goalkeeper), DF (defender), MF (midfielder), FW (forward)
-- **number**: Required, integer between 1 and 99
-- **status**: Required, one of: active, injured, retired
-- **club_id**: Required, must reference an existing club
+## Business Rules (Transfers)
 
-### Constraints
-- Jersey number must be unique within a club (two players in the same club cannot have the same number)
+1. Player must belong to the "from" club for transfer to succeed
+2. Player with no club (NULL) can only be transferred from "none/free"
+3. From and To clubs must be different
+4. Transfer date must be valid YYYY-MM-DD format
+5. Fee (if provided) must be non-negative
+6. Transfer is atomic: both transfer record AND player update succeed or fail together
 
 ## Architecture
 
 ```
-User Input → Intent Detection (regex from intents.json) → Handler (chatbot.py)
-→ Service Layer (clubs_service.py / players_service.py) → Database (db.py)
+User Input → NLU (intents.json regex) → Router (chatbot/router.py)
+    → Services (clubs/players/transfers_service.py) → Database (database/db.py)
 ```
 
 Key principles:
-- All DB access goes through `src/db.py` (no direct SQL in chatbot)
-- Validation is enforced in service layer before database operations
-- Custom exceptions: `PlayerValidationError`, `PlayerNotFoundError`, `ClubNotFoundError`
+- All DB access goes through `database/db.py` (no direct SQL in chatbot)
+- Validation is enforced in service layer
+- Custom exceptions: `PlayerValidationError`, `PlayerNotFoundError`, `ClubNotFoundError`, `TransferValidationError`
 - Responses are user-friendly Bulgarian messages
-
-## Testing
-
-Run unit tests:
-```bash
-python -m pytest tests/test_players_service.py -v
-```
-
-Or using unittest:
-```bash
-python -m unittest tests.test_players_service -v
-```
-
-The test suite includes:
-- Validation tests (position, number, birthdate, status)
-- CRUD operation tests (create, read, update, delete)
-- Filtering and pagination tests
-- Error handling tests (missing data, invalid input, duplicate numbers)
-- Full integration workflow test
 
 ## Test Data
 
-Sample data is provided in `data/test_players.sql`. To load it:
+Sample data is provided in `data/test_transfers.sql`. Includes:
+- 4 clubs: Левски, Лудогорец, ЦСКА, Ботев Пловдив
+- 6 players
+- 5+ transfers
+
+To load:
 ```bash
-python -c "from src.db import execute_query; execute_query(open('data/test_players.sql').read(), commit=True)"
+python -c "from src.database.db import execute_query; execute_query(open('data/test_transfers.sql').read(), commit=True)"
 ```
 
-Or manually via SQLite:
-```bash
-sqlite3 data.db < data/test_players.sql
-```
-
-## Players Service API
-
-### Functions
-
-#### `add_player(full_name, birth_date, nationality, position, number, club_name) → str`
-Adds a new player. Returns success message. Raises `PlayerValidationError` or `ClubNotFoundError`.
-
-#### `get_players(club_id=None, limit=None, offset=0) → List[Dict]`
-Retrieves players with optional filtering by club_id and pagination.
-
-#### `get_players_by_club_name(club_name) → List[Dict]`
-Retrieves all players for a specific club. Raises `ClubNotFoundError` if club doesn't exist.
-
-#### `update_player(player_id, position=None, number=None, status=None) → str`
-Updates player's position, number, or status. Returns success message. Raises `PlayerNotFoundError` or `PlayerValidationError`.
-
-#### `update_player_number(name, number) → str`
-Legacy function: updates player's number by name.
-
-#### `update_player_status(name, status) → str`
-Updates player's status by name.
-
-#### `delete_player(player_id) → str`
-Deletes a player by ID (hard delete). Returns success message. Raises `PlayerNotFoundError`.
-
-#### `delete_player_by_name(name) → str`
-Legacy function: deletes a player by name.
-
-#### `format_player_list(players) → str`
-Formats a list of player dictionaries for display.
-
-## Git commit suggestions (minimal required)
-1. initial commit
-2. add db module
-3. add chatbot base + intents
-4. add clubs CRUD
-5. add players CRUD + validation
-6. add tests and documentation
+## Git Commits
+- feat: transfers table + schema update
+- feat: transfers service + business rules
+- feat: chatbot intents update + main.py refactor
+- test: seed data + scenarios
