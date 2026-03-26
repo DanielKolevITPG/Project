@@ -1,15 +1,19 @@
 import os
 import logging
 import sys
+import io
 
-# ...existing code...
-import db
-from chatbot import bot
-import clubs_service
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
+import db as database_db
+from chatbot.router import bot
+from services import clubs_service
+import utils.logger as logger
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 LOG_FILE = os.path.join(BASE_DIR, "commands.log")
-SCHEMA_FILE = os.path.join(os.path.dirname(__file__), "..", "sql", "schema.sql")
+SCHEMA_FILE = os.path.join(BASE_DIR, "sql", "schema.sql")
 
 def setup_logging():
     logging.basicConfig(
@@ -19,11 +23,7 @@ def setup_logging():
     )
 
 def init_db():
-    """
-    Create DB file and schema if not exists.
-    """
-    conn = db.get_connection()
-    # load schema.sql and execute script
+    conn = database_db.get_connection()
     try:
         with open(SCHEMA_FILE, "r", encoding="utf-8") as f:
             script = f.read()
@@ -54,7 +54,6 @@ def main_loop():
         response, exit_flag = bot.handle(user_input)
         print(response)
 
-        # Log every command with timestamp, input and output
         logging.info(f"INPUT: {user_input} | OUTPUT: {response}")
 
         if exit_flag:
