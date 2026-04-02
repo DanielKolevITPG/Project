@@ -6,7 +6,7 @@ import io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8")
 
-import db as database_db
+from database import db as database_db
 from chatbot.router import bot
 from services import clubs_service
 import utils.logger as logger
