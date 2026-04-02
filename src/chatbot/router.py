@@ -9,10 +9,11 @@ from services.players_service import (
     update_player_number,
     update_player_status,
     delete_player_by_name,
-    format_player_list
+    format_player_list,
 )
 import services.clubs_service
 import services.transfers_service
+import services.leagues_service
 
 INTENTS_FILE = os.path.join(os.path.dirname(__file__), "..", "intents.json")
 
@@ -59,13 +60,19 @@ class Chatbot:
             if intent_name == "add_club":
                 name = self._extract_group(match, "name")
                 if not name:
-                    return ("Не открих име на клуб. Моля опитайте: Добави клуб <Име>", False)
+                    return (
+                        "Не открих име на клуб. Моля опитайте: Добави клуб <Име>",
+                        False,
+                    )
                 res = services.clubs_service.add_club(name)
                 return (res.get("message", "Неуспешна операция."), False)
             if intent_name == "delete_club":
                 name = self._extract_group(match, "name")
                 if not name:
-                    return ("Не открих име на клуб. Моля опитайте: Изтрий клуб <Име>", False)
+                    return (
+                        "Не открих име на клуб. Моля опитайте: Изтрий клуб <Име>",
+                        False,
+                    )
                 res = services.clubs_service.delete_club(name)
                 return (res.get("message", "Неуспешна операция."), False)
 
@@ -79,7 +86,10 @@ class Chatbot:
                 status = self._extract_group(match, "status")
 
                 if not all([name, club, position, number_str, nationality, birth_date]):
-                    return ("Недостатъчно данни. Очакван формат: Добави играч <име> в клуб <клуб> на позиция <GK|DF|MF|FW> с номер <1-99> и националност <националност> и дата на раждане <YYYY-MM-DD> и статус <active|injured|retired>", False)
+                    return (
+                        "Недостатъчно данни. Очакван формат: Добави играч <име> в клуб <клуб> на позиция <GK|DF|MF|FW> с номер <1-99> и националност <националност> и дата на раждане <YYYY-MM-DD> и статус <active|injured|retired>",
+                        False,
+                    )
 
                 try:
                     number = int(number_str)
@@ -93,7 +103,7 @@ class Chatbot:
                         nationality=nationality,
                         position=position.upper(),
                         number=number,
-                        club_name=club
+                        club_name=club,
                     )
                     return (res, False)
                 except Exception as e:
@@ -105,7 +115,10 @@ class Chatbot:
                     try:
                         players = get_players_by_club_name(club)
                         formatted = format_player_list(players)
-                        return (formatted if formatted else "Няма играчи в този клуб.", False)
+                        return (
+                            formatted if formatted else "Няма играчи в този клуб.",
+                            False,
+                        )
                     except Exception as e:
                         return (f"Грешка: {e}", False)
                 else:
@@ -118,7 +131,10 @@ class Chatbot:
                 number_str = self._extract_group(match, "number")
 
                 if not name or not number_str:
-                    return ("Не открих име или номер. Моля опитайте: Смени номер на <име> на <номер>", False)
+                    return (
+                        "Не открих име или номер. Моля опитайте: Смени номер на <име> на <номер>",
+                        False,
+                    )
 
                 try:
                     number = int(number_str)
@@ -136,7 +152,10 @@ class Chatbot:
                 status = self._extract_group(match, "status")
 
                 if not name or not status:
-                    return ("Не открих име или статус. Моля опитайте: Смени статус на <име> на <active|injured|retired>", False)
+                    return (
+                        "Не открих име или статус. Моля опитайте: Смени статус на <име> на <active|injured|retired>",
+                        False,
+                    )
 
                 try:
                     res = update_player_status(name, status)
@@ -147,7 +166,10 @@ class Chatbot:
             if intent_name == "delete_player":
                 name = self._extract_group(match, "name")
                 if not name:
-                    return ("Не открих име на играч. Моля опитайте: Изтрий играч <име>", False)
+                    return (
+                        "Не открих име на играч. Моля опитайте: Изтрий играч <име>",
+                        False,
+                    )
 
                 try:
                     res = delete_player_by_name(name)
@@ -163,7 +185,10 @@ class Chatbot:
                 fee_str = self._extract_group(match, "fee")
 
                 if not all([player_name, from_club, to_club, date]):
-                    return ("Недостатъчно данни. Очакван формат: Трансфер <име> от <клуб> в <клуб> <YYYY-MM-DD> [сума <сума>]", False)
+                    return (
+                        "Недостатъчно данни. Очакван формат: Трансфер <име> от <клуб> в <клуб> <YYYY-MM-DD> [сума <сума>]",
+                        False,
+                    )
 
                 try:
                     fee = int(fee_str) if fee_str else None
@@ -176,7 +201,7 @@ class Chatbot:
                         from_club=from_club,
                         to_club=to_club,
                         date=date,
-                        fee=fee
+                        fee=fee,
                     )
                     return (res, False)
                 except Exception as e:
@@ -185,10 +210,15 @@ class Chatbot:
             if intent_name == "show_transfers_player":
                 player_name = self._extract_group(match, "player")
                 if not player_name:
-                    return ("Не открих име на играч. Очакван формат: Покажи трансфери на <име>", False)
+                    return (
+                        "Не открих име на играч. Очакван формат: Покажи трансфери на <име>",
+                        False,
+                    )
 
                 try:
-                    res = services.transfers_service.list_transfers_by_player(player_name)
+                    res = services.transfers_service.list_transfers_by_player(
+                        player_name
+                    )
                     return (res, False)
                 except Exception as e:
                     return (f"Грешка: {e}", False)
@@ -196,13 +226,137 @@ class Chatbot:
             if intent_name == "show_transfers_club":
                 club_name = self._extract_group(match, "club")
                 if not club_name:
-                    return ("Не открих име на клуб. Очакван формат: Покажи трансфери на <клуб>", False)
+                    return (
+                        "Не открих име на клуб. Очакван формат: Покажи трансфери на <клуб>",
+                        False,
+                    )
 
                 try:
                     res = services.transfers_service.list_transfers_by_club(club_name)
                     return (res, False)
                 except Exception as e:
                     return (f"Грешка: {e}", False)
+
+            # League intents
+            if intent_name == "create_league":
+                name = self._extract_group(match, "name")
+                season = self._extract_group(match, "season")
+
+                if not name or not season:
+                    return (
+                        "Недостатъчно данни. Очакван формат: Създай лига <име> <сезон> (напр. 2025/2026)",
+                        False,
+                    )
+
+                try:
+                    res = services.leagues_service.create_league(name, season)
+                    return (res, False)
+                except Exception as e:
+                    return (f"Грешка при създаване на лига: {e}", False)
+
+            if intent_name == "add_team_to_league":
+                club = self._extract_group(match, "club")
+                name = self._extract_group(match, "name")
+                season = self._extract_group(match, "season")
+
+                if not all([club, name, season]):
+                    return (
+                        "Недостатъчно данни. Очакван формат: Добави отбор <клуб> в лига <име> <сезон>",
+                        False,
+                    )
+
+                try:
+                    res = services.leagues_service.add_team_to_league(
+                        name, season, club
+                    )
+                    return (res, False)
+                except Exception as e:
+                    return (f"Грешка при добавяне на отбор: {e}", False)
+
+            if intent_name == "remove_team_from_league":
+                club = self._extract_group(match, "club")
+                name = self._extract_group(match, "name")
+                season = self._extract_group(match, "season")
+
+                if not all([club, name, season]):
+                    return (
+                        "Недостатъчно данни. Очакван формат: Премахни отбор <клуб> от лига <име> <сезон>",
+                        False,
+                    )
+
+                try:
+                    res = services.leagues_service.remove_team_from_league(
+                        name, season, club
+                    )
+                    return (res, False)
+                except Exception as e:
+                    return (f"Грешка при премахване на отбор: {e}", False)
+
+            if intent_name == "show_teams_in_league":
+                name = self._extract_group(match, "name")
+                season = self._extract_group(match, "season")
+
+                if not name or not season:
+                    return (
+                        "Недостатъчно данни. Очакван формат: Покажи отбори в лига <име> <сезон>",
+                        False,
+                    )
+
+                try:
+                    res = services.leagues_service.get_teams_in_league(name, season)
+                    return (res, False)
+                except Exception as e:
+                    return (f"Грешка: {e}", False)
+
+            if intent_name == "generate_schedule":
+                name = self._extract_group(match, "name")
+                season = self._extract_group(match, "season")
+
+                if not name or not season:
+                    return (
+                        "Недостатъчно данни. Очакван формат: Генерирай програма <име> <сезон>",
+                        False,
+                    )
+
+                try:
+                    res = services.leagues_service.generate_round_robin_schedule(
+                        name, season
+                    )
+                    return (res, False)
+                except Exception as e:
+                    return (f"Грешка при генериране на програма: {e}", False)
+
+            if intent_name == "show_schedule":
+                name = self._extract_group(match, "name")
+                season = self._extract_group(match, "season")
+
+                if not name or not season:
+                    return (
+                        "Недостатъчно данни. Очакван формат: Покажи програма <име> <сезон>",
+                        False,
+                    )
+
+                try:
+                    res = services.leagues_service.get_league_schedule(name, season)
+                    return (res, False)
+                except Exception as e:
+                    return (f"Грешка: {e}", False)
+
+            if intent_name == "delete_league":
+                name = self._extract_group(match, "name")
+                season = self._extract_group(match, "season")
+
+                if not name or not season:
+                    return (
+                        "Недостатъчно данни. Очакван формат: Изтрий лига <име> <сезон>",
+                        False,
+                    )
+
+                try:
+                    res = services.leagues_service.delete_league(name, season)
+                    return (res, False)
+                except Exception as e:
+                    return (f"Грешка при изтриване на лига: {e}", False)
 
         except Exception as e:
             return (f"Възникна грешка при обработка: {e}", False)
