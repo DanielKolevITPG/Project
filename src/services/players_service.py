@@ -1,23 +1,26 @@
-from database.db import execute_query
+from src.db import execute_query
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 
-VALID_POSITIONS = ['GK', 'DF', 'MF', 'FW']
-VALID_STATUS = ['active', 'injured', 'retired']
+VALID_POSITIONS = ["GK", "DF", "MF", "FW"]
+VALID_STATUS = ["active", "injured", "retired"]
 
 
 class PlayerValidationError(Exception):
     """Custom exception for player validation errors."""
+
     pass
 
 
 class PlayerNotFoundError(Exception):
     """Custom exception when player is not found."""
+
     pass
 
 
 class ClubNotFoundError(Exception):
     """Custom exception when club is not found."""
+
     pass
 
 
@@ -48,21 +51,17 @@ def validate_status(status: str) -> bool:
 def find_club_id(club_name: str) -> Optional[int]:
     """Find club ID by name. Returns None if not found."""
     club = execute_query(
-        "SELECT id FROM clubs WHERE name = ?",
-        (club_name,),
-        fetchone=True
+        "SELECT id FROM clubs WHERE name = ?", (club_name,), fetchone=True
     )
     if club:
-        return club['id']
+        return club["id"]
     return None
 
 
 def get_player_by_name(full_name: str) -> Optional[Dict[str, Any]]:
     """Find player by full name. Returns None if not found."""
     player = execute_query(
-        "SELECT * FROM players WHERE full_name = ?",
-        (full_name,),
-        fetchone=True
+        "SELECT * FROM players WHERE full_name = ?", (full_name,), fetchone=True
     )
     return dict(player) if player else None
 
@@ -70,14 +69,14 @@ def get_player_by_name(full_name: str) -> Optional[Dict[str, Any]]:
 def get_player_by_id(player_id: int) -> Optional[Dict[str, Any]]:
     """Find player by ID. Returns None if not found."""
     player = execute_query(
-        "SELECT * FROM players WHERE id = ?",
-        (player_id,),
-        fetchone=True
+        "SELECT * FROM players WHERE id = ?", (player_id,), fetchone=True
     )
     return dict(player) if player else None
 
 
-def check_duplicate_number_in_club(club_id: int, number: int, exclude_player_id: Optional[int] = None) -> bool:
+def check_duplicate_number_in_club(
+    club_id: int, number: int, exclude_player_id: Optional[int] = None
+) -> bool:
     """Check if a jersey number already exists in the club (excluding current player for updates)."""
     if exclude_player_id:
         query = "SELECT id FROM players WHERE club_id = ? AND number = ? AND id != ?"
@@ -95,7 +94,7 @@ def add_player(
     nationality: str,
     position: str,
     number: int,
-    club_name: str
+    club_name: str,
 ) -> str:
     """
     Add a new player to the database.
@@ -120,13 +119,17 @@ def add_player(
         raise PlayerValidationError("Името на играча е задължително.")
 
     if not birth_date or not validate_birthdate(birth_date):
-        raise PlayerValidationError("Невалидна дата на раждане. Използвайте формат YYYY-MM-DD и дата в миналото.")
+        raise PlayerValidationError(
+            "Невалидна дата на раждане. Използвайте формат YYYY-MM-DD и дата в миналото."
+        )
 
     if not nationality or not isinstance(nationality, str) or not nationality.strip():
         raise PlayerValidationError("Националността е задължителна.")
 
     if not validate_position(position):
-        raise PlayerValidationError(f"Невалидна позиция. Допустими стойности: {', '.join(VALID_POSITIONS)}")
+        raise PlayerValidationError(
+            f"Невалидна позиция. Допустими стойности: {', '.join(VALID_POSITIONS)}"
+        )
 
     if not validate_number(number):
         raise PlayerValidationError("Номерът трябва да е между 1 и 99.")
@@ -138,7 +141,9 @@ def add_player(
 
     # Check for duplicate jersey number in club
     if check_duplicate_number_in_club(club_id, number):
-        raise PlayerValidationError(f"Номер {number} вече се използва в клуба '{club_name}'.")
+        raise PlayerValidationError(
+            f"Номер {number} вече се използва в клуба '{club_name}'."
+        )
 
     # Insert player
     try:
@@ -147,8 +152,16 @@ def add_player(
             INSERT INTO players (full_name, birth_date, nationality, position, number, club_id, status)
             VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            (full_name.strip(), birth_date, nationality.strip(), position, number, club_id, 'active'),
-            commit=True
+            (
+                full_name.strip(),
+                birth_date,
+                nationality.strip(),
+                position,
+                number,
+                club_id,
+                "active",
+            ),
+            commit=True,
         )
         return f"Играч {full_name} е добавен успешно."
     except Exception as e:
@@ -158,7 +171,7 @@ def add_player(
 def get_players(
     club_id: Optional[int] = None,
     limit: Optional[int] = None,
-    offset: Optional[int] = 0
+    offset: Optional[int] = 0,
 ) -> List[Dict[str, Any]]:
     """
     Retrieve players with optional filtering and pagination.
@@ -213,7 +226,7 @@ def update_player(
     player_id: int,
     position: Optional[str] = None,
     number: Optional[int] = None,
-    status: Optional[str] = None
+    status: Optional[str] = None,
 ) -> str:
     """
     Update player's position, number, or status.
@@ -241,7 +254,9 @@ def update_player(
 
     if position is not None:
         if not validate_position(position):
-            raise PlayerValidationError(f"Невалидна позиция. Допустими стойности: {', '.join(VALID_POSITIONS)}")
+            raise PlayerValidationError(
+                f"Невалидна позиция. Допустими стойности: {', '.join(VALID_POSITIONS)}"
+            )
         updates.append("position = ?")
         params.append(position)
 
@@ -249,14 +264,18 @@ def update_player(
         if not validate_number(number):
             raise PlayerValidationError("Номерът трябва да е между 1 и 99.")
         # Check for duplicate number in club
-        if check_duplicate_number_in_club(player['club_id'], number, exclude_player_id=player_id):
+        if check_duplicate_number_in_club(
+            player["club_id"], number, exclude_player_id=player_id
+        ):
             raise PlayerValidationError(f"Номер {number} вече се използва в този клуб.")
         updates.append("number = ?")
         params.append(number)
 
     if status is not None:
         if not validate_status(status):
-            raise PlayerValidationError(f"Невалиден статус. Допустими стойности: {', '.join(VALID_STATUS)}")
+            raise PlayerValidationError(
+                f"Невалиден статус. Допустими стойности: {', '.join(VALID_STATUS)}"
+            )
         updates.append("status = ?")
         params.append(status)
 
@@ -293,7 +312,7 @@ def update_player_number(name: str, number: int) -> str:
     if not player:
         raise PlayerNotFoundError(f"Играч '{name}' не съществува.")
 
-    return update_player(player['id'], number=number)
+    return update_player(player["id"], number=number)
 
 
 def update_player_status(name: str, status: str) -> str:
@@ -315,7 +334,7 @@ def update_player_status(name: str, status: str) -> str:
     if not player:
         raise PlayerNotFoundError(f"Играч '{name}' не съществува.")
 
-    return update_player(player['id'], status=status)
+    return update_player(player["id"], status=status)
 
 
 def delete_player(player_id: int) -> str:
@@ -336,11 +355,7 @@ def delete_player(player_id: int) -> str:
         raise PlayerNotFoundError(f"Играч с ID {player_id} не съществува.")
 
     try:
-        execute_query(
-            "DELETE FROM players WHERE id = ?",
-            (player_id,),
-            commit=True
-        )
+        execute_query("DELETE FROM players WHERE id = ?", (player_id,), commit=True)
         return f"Играч с ID {player_id} е изтрит."
     except Exception as e:
         raise RuntimeError(f"Грешка при изтриване на играч: {e}")
@@ -363,7 +378,7 @@ def delete_player_by_name(name: str) -> str:
     if not player:
         raise PlayerNotFoundError(f"Играч '{name}' не съществува.")
 
-    return delete_player(player['id'])
+    return delete_player(player["id"])
 
 
 def format_player_list(players: List[Dict[str, Any]]) -> str:

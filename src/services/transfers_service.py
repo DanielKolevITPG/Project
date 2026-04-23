@@ -1,46 +1,42 @@
-from database.db import execute_query
+from src.db import execute_query
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 
 
 class TransferValidationError(Exception):
     """Custom exception for transfer validation errors."""
+
     pass
 
 
 class TransferNotFoundError(Exception):
     """Custom exception when transfer is not found."""
+
     pass
 
 
 def find_club_id(club_name: str) -> Optional[int]:
     """Find club ID by name. Returns None if not found."""
     club = execute_query(
-        "SELECT id FROM clubs WHERE name = ?",
-        (club_name,),
-        fetchone=True
+        "SELECT id FROM clubs WHERE name = ?", (club_name,), fetchone=True
     )
     if club:
-        return club['id']
+        return club["id"]
     return None
 
 
 def find_club_name_by_id(club_id: int) -> Optional[str]:
     """Find club name by ID. Returns None if not found."""
     club = execute_query(
-        "SELECT name FROM clubs WHERE id = ?",
-        (club_id,),
-        fetchone=True
+        "SELECT name FROM clubs WHERE id = ?", (club_id,), fetchone=True
     )
-    return club['name'] if club else None
+    return club["name"] if club else None
 
 
 def get_player_by_name(full_name: str) -> Optional[Dict[str, Any]]:
     """Find player by full name. Returns None if not found."""
     player = execute_query(
-        "SELECT * FROM players WHERE full_name = ?",
-        (full_name,),
-        fetchone=True
+        "SELECT * FROM players WHERE full_name = ?", (full_name,), fetchone=True
     )
     return dict(player) if player else None
 
@@ -48,9 +44,7 @@ def get_player_by_name(full_name: str) -> Optional[Dict[str, Any]]:
 def get_player_by_id(player_id: int) -> Optional[Dict[str, Any]]:
     """Find player by ID. Returns None if not found."""
     player = execute_query(
-        "SELECT * FROM players WHERE id = ?",
-        (player_id,),
-        fetchone=True
+        "SELECT * FROM players WHERE id = ?", (player_id,), fetchone=True
     )
     return dict(player) if player else None
 
@@ -77,7 +71,7 @@ def transfer_player(
     to_club: str,
     date: str,
     fee: Optional[int] = None,
-    note: Optional[str] = None
+    note: Optional[str] = None,
 ) -> str:
     """
     Transfer a player from one club to another.
@@ -117,12 +111,14 @@ def transfer_player(
         raise TransferValidationError(f"Клубът '{to_club}' не съществува.")
 
     # Handle "free" transfer (player has no club)
-    player_current_club_id = player.get('club_id')
+    player_current_club_id = player.get("club_id")
 
     if player_current_club_id is None:
         # Player has no club - allow transfer only if from_club is "none/free"
-        if from_club.lower() not in ['няма', 'свободен', 'free', 'none', '']:
-            raise TransferValidationError(f"Играчът '{player_name}' няма клуб. За да бъде трансфериран, 'отбор от' трябва да е 'няма' или 'свободен'.")
+        if from_club.lower() not in ["няма", "свободен", "free", "none", ""]:
+            raise TransferValidationError(
+                f"Играчът '{player_name}' няма клуб. За да бъде трансфериран, 'отбор от' трябва да е 'няма' или 'свободен'."
+            )
         from_club_id = None
     else:
         # Player has a club - validate from_club matches
@@ -143,7 +139,8 @@ def transfer_player(
     # Atomic transfer: insert transfer record AND update player club_id
     conn = None
     try:
-        from database.db import get_connection
+        from src.db import get_connection
+
         conn = get_connection()
         cur = conn.cursor()
 
@@ -153,13 +150,12 @@ def transfer_player(
             INSERT INTO transfers (player_id, from_club_id, to_club_id, transfer_date, fee, note)
             VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (player['id'], from_club_id, to_club_id, date, fee, note)
+            (player["id"], from_club_id, to_club_id, date, fee, note),
         )
 
         # Update player's club_id
         cur.execute(
-            "UPDATE players SET club_id = ? WHERE id = ?",
-            (to_club_id, player['id'])
+            "UPDATE players SET club_id = ? WHERE id = ?", (to_club_id, player["id"])
         )
 
         # Commit both operations atomically
@@ -210,8 +206,8 @@ def list_transfers_by_player(player_name: str) -> str:
         WHERE t.player_id = ?
         ORDER BY t.transfer_date DESC
         """,
-        (player['id'],),
-        fetchall=True
+        (player["id"],),
+        fetchall=True,
     )
 
     if not transfers:
@@ -219,9 +215,9 @@ def list_transfers_by_player(player_name: str) -> str:
 
     lines = [f"Трансфери на {player_name}:"]
     for t in transfers:
-        from_name = t['from_club_name'] if t['from_club_name'] else "няма"
-        to_name = t['to_club_name']
-        fee_str = f" | Сума: {t['fee']}" if t['fee'] else ""
+        from_name = t["from_club_name"] if t["from_club_name"] else "няма"
+        to_name = t["to_club_name"]
+        fee_str = f" | Сума: {t['fee']}" if t["fee"] else ""
         lines.append(f"  {t['transfer_date']}: {from_name} → {to_name}{fee_str}")
 
     return "\n".join(lines)
@@ -258,7 +254,7 @@ def list_transfers_by_club(club_name: str) -> str:
         ORDER BY t.transfer_date DESC
         """,
         (club_id, club_id),
-        fetchall=True
+        fetchall=True,
     )
 
     if not transfers:
@@ -266,10 +262,12 @@ def list_transfers_by_club(club_name: str) -> str:
 
     lines = [f"Трансфери на {club_name}:"]
     for t in transfers:
-        from_name = t['from_club_name'] if t['from_club_name'] else "няма"
-        to_name = t['to_club_name']
-        direction = "→" if t['from_club_id'] == club_id else "←"
-        fee_str = f" | Сума: {t['fee']}" if t['fee'] else ""
-        lines.append(f"  {t['transfer_date']}: {t['player_name']} {direction} {to_name}{fee_str}")
+        from_name = t["from_club_name"] if t["from_club_name"] else "няма"
+        to_name = t["to_club_name"]
+        direction = "→" if t["from_club_id"] == club_id else "←"
+        fee_str = f" | Сума: {t['fee']}" if t["fee"] else ""
+        lines.append(
+            f"  {t['transfer_date']}: {t['player_name']} {direction} {to_name}{fee_str}"
+        )
 
     return "\n".join(lines)

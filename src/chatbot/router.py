@@ -2,7 +2,7 @@ import os
 import json
 import re
 from typing import Tuple, Optional, Dict, Any
-from services.players_service import (
+from src.services.players_service import (
     add_player,
     get_players_by_club_name,
     get_players,
@@ -11,9 +11,11 @@ from services.players_service import (
     delete_player_by_name,
     format_player_list,
 )
-import services.clubs_service
-import services.transfers_service
-import services.leagues_service
+from src.services import clubs_service
+from src.services import transfers_service
+from src.services import leagues_service
+from src.chatbot import handlers_matches
+from src.utils.logger import log_command
 
 INTENTS_FILE = os.path.join(os.path.dirname(__file__), "..", "intents.json")
 
@@ -47,54 +49,84 @@ class Chatbot:
             return ("Не разбрах командата. (помощ за списък с команди)", False)
 
         try:
+            params: Optional[Dict[str, Any]] = None
             if intent_name == "help":
-                return (self.intents[intent_name].get("response", "help"), False)
+                response = self.intents[intent_name].get("response", "help")
+                log_command(text, intent_name, params, response)
+                return (response, False)
             if intent_name == "exit":
-                return (self.intents[intent_name].get("response", "exit"), True)
+                response = self.intents[intent_name].get("response", "exit")
+                log_command(text, intent_name, params, response)
+                return (response, True)
             if intent_name == "list_clubs":
-                clubs = services.clubs_service.get_all_clubs()
+                clubs = clubs_service.get_all_clubs()
                 if not clubs:
-                    return ("Няма записани клубове.", False)
+                    response = "Няма записани клубове."
+                    log_command(text, intent_name, params, response)
+                    return (response, False)
                 lines = [f"{c['id']}: {c['name']}" for c in clubs]
-                return ("\n".join(lines), False)
+                response = "\n".join(lines)
+                log_command(text, intent_name, params, response)
+                return (response, False)
             if intent_name == "add_club":
-                name = self._extract_group(match, "name")
+                name = (self._extract_group(match, "name") or "").strip()
                 if not name:
-                    return (
-                        "Не открих име на клуб. Моля опитайте: Добави клуб <Име>",
-                        False,
-                    )
-                res = services.clubs_service.add_club(name)
-                return (res.get("message", "Неуспешна операция."), False)
+                    response = "Не открих име на клуб. Моля опитайте: Добави клуб <Име>"
+                    log_command(text, intent_name, params, response)
+                    return (response, False)
+                res = clubs_service.add_club(name)
+                response = res.get("message", "Неуспешна операция.")
+                log_command(text, intent_name, {"name": name}, response)
+                return (response, False)
             if intent_name == "delete_club":
-                name = self._extract_group(match, "name")
+                name = (self._extract_group(match, "name") or "").strip()
                 if not name:
-                    return (
-                        "Не открих име на клуб. Моля опитайте: Изтрий клуб <Име>",
-                        False,
-                    )
-                res = services.clubs_service.delete_club(name)
-                return (res.get("message", "Неуспешна операция."), False)
+                    response = "Не открих име на клуб. Моля опитайте: Изтрий клуб <Име>"
+                    log_command(text, intent_name, params, response)
+                    return (response, False)
+                res = clubs_service.delete_club(name)
+                response = res.get("message", "Неуспешна операция.")
+                log_command(text, intent_name, {"name": name}, response)
+                return (response, False)
 
             if intent_name == "add_player":
-                name = self._extract_group(match, "name")
-                club = self._extract_group(match, "club")
-                position = self._extract_group(match, "position")
-                number_str = self._extract_group(match, "number")
-                nationality = self._extract_group(match, "nationality")
-                birth_date = self._extract_group(match, "birth_date")
-                status = self._extract_group(match, "status")
+                name = (self._extract_group(match, "name") or "").strip()
+                club = (self._extract_group(match, "club") or "").strip()
+                position = (self._extract_group(match, "position") or "").strip()
+                number_str = (self._extract_group(match, "number") or "").strip()
+                nationality = (self._extract_group(match, "nationality") or "").strip()
+                birth_date = (self._extract_group(match, "birth_date") or "").strip()
+                status = (self._extract_group(match, "status") or "").strip()
 
                 if not all([name, club, position, number_str, nationality, birth_date]):
-                    return (
-                        "Недостатъчно данни. Очакван формат: Добави играч <име> в клуб <клуб> на позиция <GK|DF|MF|FW> с номер <1-99> и националност <националност> и дата на раждане <YYYY-MM-DD> и статус <active|injured|retired>",
-                        False,
+                    response = "Недостатъчно данни. Очакван формат: Добави играч <име> в клуб <клуб> на позиция <GK|DF|MF|FW> с номер <1-99> и националност <националност> и дата на раждане <YYYY-MM-DD> и статус <active|injured|retired>"
+                    log_command(
+                        text,
+                        intent_name,
+                        {
+                            "name": name,
+                            "club": club,
+                            "position": position,
+                            "number": number_str,
+                            "nationality": nationality,
+                            "birth_date": birth_date,
+                            "status": status,
+                        },
+                        response,
                     )
+                    return (response, False)
 
                 try:
                     number = int(number_str)
                 except ValueError:
-                    return ("Невалиден номер. Трябва да е число между 1 и 99.", False)
+                    response = "Невалиден номер. Трябва да е число между 1 и 99."
+                    log_command(
+                        text,
+                        intent_name,
+                        {"name": name, "number": number_str},
+                        response,
+                    )
+                    return (response, False)
 
                 try:
                     res = add_player(
@@ -105,261 +137,498 @@ class Chatbot:
                         number=number,
                         club_name=club,
                     )
-                    return (res, False)
+                    response = res
+                    log_command(
+                        text,
+                        intent_name,
+                        {
+                            "name": name,
+                            "club": club,
+                            "position": position,
+                            "number": number,
+                            "nationality": nationality,
+                            "birth_date": birth_date,
+                            "status": status,
+                        },
+                        response,
+                    )
+                    return (response, False)
                 except Exception as e:
-                    return (f"Грешка при добавяне на играч: {e}", False)
+                    response = f"Грешка при добавяне на играч: {e}"
+                    log_command(
+                        text, intent_name, {"name": name, "club": club}, response
+                    )
+                    return (response, False)
 
             if intent_name == "list_players":
-                club = self._extract_group(match, "club")
+                club = (self._extract_group(match, "club") or "").strip()
                 if club:
                     try:
                         players = get_players_by_club_name(club)
                         formatted = format_player_list(players)
-                        return (
-                            formatted if formatted else "Няма играчи в този клуб.",
-                            False,
+                        response = (
+                            formatted if formatted else "Няма играчи в този клуб."
                         )
+                        log_command(text, intent_name, {"club": club}, response)
+                        return (response, False)
                     except Exception as e:
-                        return (f"Грешка: {e}", False)
+                        response = f"Грешка: {e}"
+                        log_command(text, intent_name, {"club": club}, response)
+                        return (response, False)
                 else:
                     all_players = get_players()
                     formatted = format_player_list(all_players)
-                    return (formatted if formatted else "Няма записани играчи.", False)
+                    response = formatted if formatted else "Няма записани играчи."
+                    log_command(text, intent_name, params, response)
+                    return (response, False)
 
             if intent_name == "update_player_number":
-                name = self._extract_group(match, "name")
-                number_str = self._extract_group(match, "number")
+                name = (self._extract_group(match, "name") or "").strip()
+                number_str = (self._extract_group(match, "number") or "").strip()
 
                 if not name or not number_str:
-                    return (
-                        "Не открих име или номер. Моля опитайте: Смени номер на <име> на <номер>",
-                        False,
+                    response = "Не открих име или номер. Моля опитайте: Смени номер на <име> на <номер>"
+                    log_command(
+                        text,
+                        intent_name,
+                        {"name": name, "number": number_str},
+                        response,
                     )
+                    return (response, False)
 
                 try:
                     number = int(number_str)
                 except ValueError:
-                    return ("Невалиден номер.", False)
+                    response = "Невалиден номер."
+                    log_command(
+                        text,
+                        intent_name,
+                        {"name": name, "number": number_str},
+                        response,
+                    )
+                    return (response, False)
 
                 try:
                     res = update_player_number(name, number)
-                    return (res, False)
+                    response = res
+                    log_command(
+                        text, intent_name, {"name": name, "number": number}, response
+                    )
+                    return (response, False)
                 except Exception as e:
-                    return (f"Грешка при актуализация: {e}", False)
+                    response = f"Грешка при актуализация: {e}"
+                    log_command(
+                        text,
+                        intent_name,
+                        {"name": name, "number": number_str},
+                        response,
+                    )
+                    return (response, False)
 
             if intent_name == "update_player_status":
-                name = self._extract_group(match, "name")
-                status = self._extract_group(match, "status")
+                name = (self._extract_group(match, "name") or "").strip()
+                status = (self._extract_group(match, "status") or "").strip()
 
                 if not name or not status:
-                    return (
-                        "Не открих име или статус. Моля опитайте: Смени статус на <име> на <active|injured|retired>",
-                        False,
+                    response = "Не открих име или статус. Моля опитайте: Смени статус на <име> на <active|injured|retired>"
+                    log_command(
+                        text, intent_name, {"name": name, "status": status}, response
                     )
+                    return (response, False)
 
                 try:
                     res = update_player_status(name, status)
-                    return (res, False)
+                    response = res
+                    log_command(
+                        text, intent_name, {"name": name, "status": status}, response
+                    )
+                    return (response, False)
                 except Exception as e:
-                    return (f"Грешка при актуализация: {e}", False)
+                    response = f"Грешка при актуализация: {e}"
+                    log_command(
+                        text, intent_name, {"name": name, "status": status}, response
+                    )
+                    return (response, False)
 
             if intent_name == "delete_player":
-                name = self._extract_group(match, "name")
+                name = (self._extract_group(match, "name") or "").strip()
                 if not name:
-                    return (
-                        "Не открих име на играч. Моля опитайте: Изтрий играч <име>",
-                        False,
+                    response = (
+                        "Не открих име на играч. Моля опитайте: Изтрий играч <име>"
                     )
+                    log_command(text, intent_name, params, response)
+                    return (response, False)
 
                 try:
                     res = delete_player_by_name(name)
-                    return (res, False)
+                    response = res
+                    log_command(text, intent_name, {"name": name}, response)
+                    return (response, False)
                 except Exception as e:
-                    return (f"Грешка при изтриване: {e}", False)
+                    response = f"Грешка при изтриване: {e}"
+                    log_command(text, intent_name, {"name": name}, response)
+                    return (response, False)
 
             if intent_name == "transfer_player":
-                player_name = self._extract_group(match, "player")
-                from_club = self._extract_group(match, "from_club")
-                to_club = self._extract_group(match, "to_club")
-                date = self._extract_group(match, "date")
-                fee_str = self._extract_group(match, "fee")
+                player_name = (self._extract_group(match, "player") or "").strip()
+                from_club = (self._extract_group(match, "from_club") or "").strip()
+                to_club = (self._extract_group(match, "to_club") or "").strip()
+                date = (self._extract_group(match, "date") or "").strip()
+                fee_str = (self._extract_group(match, "fee") or "").strip() or None
 
                 if not all([player_name, from_club, to_club, date]):
-                    return (
-                        "Недостатъчно данни. Очакван формат: Трансфер <име> от <клуб> в <клуб> <YYYY-MM-DD> [сума <сума>]",
-                        False,
+                    response = "Недостатъчно данни. Очакван формат: Трансфер <име> от <клуб> в <клуб> <YYYY-MM-DD> [сума <сума>]"
+                    log_command(
+                        text,
+                        intent_name,
+                        {
+                            "player": player_name,
+                            "from_club": from_club,
+                            "to_club": to_club,
+                            "date": date,
+                            "fee": fee_str,
+                        },
+                        response,
                     )
+                    return (response, False)
 
                 try:
                     fee = int(fee_str) if fee_str else None
                 except ValueError:
-                    return ("Невалидна сума.", False)
+                    response = "Невалидна сума."
+                    log_command(
+                        text,
+                        intent_name,
+                        {"player": player_name, "fee": fee_str},
+                        response,
+                    )
+                    return (response, False)
 
                 try:
-                    res = services.transfers_service.transfer_player(
+                    res = transfers_service.transfer_player(
                         player_name=player_name,
                         from_club=from_club,
                         to_club=to_club,
                         date=date,
                         fee=fee,
                     )
-                    return (res, False)
+                    response = res
+                    log_command(
+                        text,
+                        intent_name,
+                        {
+                            "player": player_name,
+                            "from_club": from_club,
+                            "to_club": to_club,
+                            "date": date,
+                            "fee": fee,
+                        },
+                        response,
+                    )
+                    return (response, False)
                 except Exception as e:
-                    return (f"Грешка при трансфер: {e}", False)
+                    response = f"Грешка при трансфер: {e}"
+                    log_command(text, intent_name, {"player": player_name}, response)
+                    return (response, False)
 
             if intent_name == "show_transfers_player":
-                player_name = self._extract_group(match, "player")
+                player_name = (self._extract_group(match, "player") or "").strip()
                 if not player_name:
-                    return (
-                        "Не открих име на играч. Очакван формат: Покажи трансфери на <име>",
-                        False,
-                    )
+                    response = "Не открих име на играч. Очакван формат: Покажи трансфери на <име>"
+                    log_command(text, intent_name, params, response)
+                    return (response, False)
 
                 try:
-                    res = services.transfers_service.list_transfers_by_player(
-                        player_name
-                    )
-                    return (res, False)
+                    res = transfers_service.list_transfers_by_player(player_name)
+                    response = res
+                    log_command(text, intent_name, {"player": player_name}, response)
+                    return (response, False)
                 except Exception as e:
-                    return (f"Грешка: {e}", False)
+                    response = f"Грешка: {e}"
+                    log_command(text, intent_name, {"player": player_name}, response)
+                    return (response, False)
 
             if intent_name == "show_transfers_club":
-                club_name = self._extract_group(match, "club")
+                club_name = (self._extract_group(match, "club") or "").strip()
                 if not club_name:
-                    return (
-                        "Не открих име на клуб. Очакван формат: Покажи трансфери на <клуб>",
-                        False,
-                    )
+                    response = "Не открих име на клуб. Очакван формат: Покажи трансфери на <клуб>"
+                    log_command(text, intent_name, params, response)
+                    return (response, False)
 
                 try:
-                    res = services.transfers_service.list_transfers_by_club(club_name)
-                    return (res, False)
+                    res = transfers_service.list_transfers_by_club(club_name)
+                    response = res
+                    log_command(text, intent_name, {"club": club_name}, response)
+                    return (response, False)
                 except Exception as e:
-                    return (f"Грешка: {e}", False)
+                    response = f"Грешка: {e}"
+                    log_command(text, intent_name, {"club": club_name}, response)
+                    return (response, False)
 
             # League intents
             if intent_name == "create_league":
-                name = self._extract_group(match, "name")
-                season = self._extract_group(match, "season")
+                name = (self._extract_group(match, "name") or "").strip()
+                season = (self._extract_group(match, "season") or "").strip()
 
                 if not name or not season:
-                    return (
-                        "Недостатъчно данни. Очакван формат: Създай лига <име> <сезон> (напр. 2025/2026)",
-                        False,
+                    response = "Недостатъчно данни. Очакван формат: Създай лига <име> <сезон> (напр. 2025/2026)"
+                    log_command(
+                        text, intent_name, {"name": name, "season": season}, response
                     )
+                    return (response, False)
 
                 try:
-                    res = services.leagues_service.create_league(name, season)
-                    return (res, False)
+                    res = leagues_service.create_league(name, season)
+                    response = res
+                    log_command(
+                        text, intent_name, {"name": name, "season": season}, response
+                    )
+                    return (response, False)
                 except Exception as e:
-                    return (f"Грешка при създаване на лига: {e}", False)
+                    response = f"Грешка при създаване на лига: {e}"
+                    log_command(
+                        text, intent_name, {"name": name, "season": season}, response
+                    )
+                    return (response, False)
 
             if intent_name == "add_team_to_league":
-                club = self._extract_group(match, "club")
-                name = self._extract_group(match, "name")
-                season = self._extract_group(match, "season")
+                club = (self._extract_group(match, "club") or "").strip()
+                name = (self._extract_group(match, "name") or "").strip()
+                season = (self._extract_group(match, "season") or "").strip()
 
                 if not all([club, name, season]):
-                    return (
-                        "Недостатъчно данни. Очакван формат: Добави отбор <клуб> в лига <име> <сезон>",
-                        False,
+                    response = "Недостатъчно данни. Очакван формат: Добави отбор <клуб> в лига <име> <сезон>"
+                    log_command(
+                        text,
+                        intent_name,
+                        {"club": club, "name": name, "season": season},
+                        response,
                     )
+                    return (response, False)
 
                 try:
-                    res = services.leagues_service.add_team_to_league(
-                        name, season, club
+                    res = leagues_service.add_team_to_league(name, season, club)
+                    response = res
+                    log_command(
+                        text,
+                        intent_name,
+                        {"club": club, "name": name, "season": season},
+                        response,
                     )
-                    return (res, False)
+                    return (response, False)
                 except Exception as e:
-                    return (f"Грешка при добавяне на отбор: {e}", False)
+                    response = f"Грешка при добавяне на отбор: {e}"
+                    log_command(
+                        text,
+                        intent_name,
+                        {"club": club, "name": name, "season": season},
+                        response,
+                    )
+                    return (response, False)
 
             if intent_name == "remove_team_from_league":
-                club = self._extract_group(match, "club")
-                name = self._extract_group(match, "name")
-                season = self._extract_group(match, "season")
+                club = (self._extract_group(match, "club") or "").strip()
+                name = (self._extract_group(match, "name") or "").strip()
+                season = (self._extract_group(match, "season") or "").strip()
 
                 if not all([club, name, season]):
-                    return (
-                        "Недостатъчно данни. Очакван формат: Премахни отбор <клуб> от лига <име> <сезон>",
-                        False,
+                    response = "Недостатъчно данни. Очакван формат: Премахни отбор <клуб> от лига <име> <сезон>"
+                    log_command(
+                        text,
+                        intent_name,
+                        {"club": club, "name": name, "season": season},
+                        response,
                     )
+                    return (response, False)
 
                 try:
-                    res = services.leagues_service.remove_team_from_league(
-                        name, season, club
+                    res = leagues_service.remove_team_from_league(name, season, club)
+                    response = res
+                    log_command(
+                        text,
+                        intent_name,
+                        {"club": club, "name": name, "season": season},
+                        response,
                     )
-                    return (res, False)
+                    return (response, False)
                 except Exception as e:
-                    return (f"Грешка при премахване на отбор: {e}", False)
+                    response = f"Грешка при премахване на отбор: {e}"
+                    log_command(
+                        text,
+                        intent_name,
+                        {"club": club, "name": name, "season": season},
+                        response,
+                    )
+                    return (response, False)
 
             if intent_name == "show_teams_in_league":
-                name = self._extract_group(match, "name")
-                season = self._extract_group(match, "season")
+                name = (self._extract_group(match, "name") or "").strip()
+                season = (self._extract_group(match, "season") or "").strip()
 
                 if not name or not season:
-                    return (
-                        "Недостатъчно данни. Очакван формат: Покажи отбори в лига <име> <сезон>",
-                        False,
+                    response = "Недостатъчно данни. Очакван формат: Покажи отбори в лига <име> <сезон>"
+                    log_command(
+                        text, intent_name, {"name": name, "season": season}, response
                     )
+                    return (response, False)
 
                 try:
-                    res = services.leagues_service.get_teams_in_league(name, season)
-                    return (res, False)
+                    res = leagues_service.get_teams_in_league(name, season)
+                    response = res
+                    log_command(
+                        text, intent_name, {"name": name, "season": season}, response
+                    )
+                    return (response, False)
                 except Exception as e:
-                    return (f"Грешка: {e}", False)
+                    response = f"Грешка: {e}"
+                    log_command(
+                        text, intent_name, {"name": name, "season": season}, response
+                    )
+                    return (response, False)
 
             if intent_name == "generate_schedule":
-                name = self._extract_group(match, "name")
-                season = self._extract_group(match, "season")
+                name = (self._extract_group(match, "name") or "").strip()
+                season = (self._extract_group(match, "season") or "").strip()
 
                 if not name or not season:
-                    return (
-                        "Недостатъчно данни. Очакван формат: Генерирай програма <име> <сезон>",
-                        False,
+                    response = "Недостатъчно данни. Очакван формат: Генерирай програма <име> <сезон>"
+                    log_command(
+                        text, intent_name, {"name": name, "season": season}, response
                     )
+                    return (response, False)
 
                 try:
-                    res = services.leagues_service.generate_round_robin_schedule(
-                        name, season
+                    res = leagues_service.generate_round_robin_schedule(name, season)
+                    response = res
+                    log_command(
+                        text, intent_name, {"name": name, "season": season}, response
                     )
-                    return (res, False)
+                    return (response, False)
                 except Exception as e:
-                    return (f"Грешка при генериране на програма: {e}", False)
+                    response = f"Грешка при генериране на програма: {e}"
+                    log_command(
+                        text, intent_name, {"name": name, "season": season}, response
+                    )
+                    return (response, False)
 
             if intent_name == "show_schedule":
-                name = self._extract_group(match, "name")
-                season = self._extract_group(match, "season")
+                name = (self._extract_group(match, "name") or "").strip()
+                season = (self._extract_group(match, "season") or "").strip()
 
                 if not name or not season:
-                    return (
-                        "Недостатъчно данни. Очакван формат: Покажи програма <име> <сезон>",
-                        False,
+                    response = "Недостатъчно данни. Очакван формат: Покажи програма <име> <сезон>"
+                    log_command(
+                        text, intent_name, {"name": name, "season": season}, response
                     )
+                    return (response, False)
 
                 try:
-                    res = services.leagues_service.get_league_schedule(name, season)
-                    return (res, False)
+                    res = leagues_service.get_league_schedule(name, season)
+                    response = res
+                    log_command(
+                        text, intent_name, {"name": name, "season": season}, response
+                    )
+                    return (response, False)
                 except Exception as e:
-                    return (f"Грешка: {e}", False)
+                    response = f"Грешка: {e}"
+                    log_command(
+                        text, intent_name, {"name": name, "season": season}, response
+                    )
+                    return (response, False)
 
             if intent_name == "delete_league":
-                name = self._extract_group(match, "name")
-                season = self._extract_group(match, "season")
+                name = (self._extract_group(match, "name") or "").strip()
+                season = (self._extract_group(match, "season") or "").strip()
 
                 if not name or not season:
-                    return (
-                        "Недостатъчно данни. Очакван формат: Изтрий лига <име> <сезон>",
-                        False,
+                    response = (
+                        "Недостатъчно данни. Очакван формат: Изтрий лига <име> <сезон>"
                     )
+                    log_command(
+                        text, intent_name, {"name": name, "season": season}, response
+                    )
+                    return (response, False)
 
                 try:
-                    res = services.leagues_service.delete_league(name, season)
-                    return (res, False)
+                    res = leagues_service.delete_league(name, season)
+                    response = res
+                    log_command(
+                        text, intent_name, {"name": name, "season": season}, response
+                    )
+                    return (response, False)
                 except Exception as e:
-                    return (f"Грешка при изтриване на лига: {e}", False)
+                    response = f"Грешка при изтриване на лига: {e}"
+                    log_command(
+                        text, intent_name, {"name": name, "season": season}, response
+                    )
+                    return (response, False)
+
+            # Matches intents
+            if intent_name == "select_league":
+                if not match:
+                    response = "Невалиден формат. Очаква се: Избери лига <име> <сезон>."
+                    log_command(text, intent_name, None, response)
+                    return (response, False)
+                response, params = handlers_matches.handle_select_league(match)
+                log_command(text, intent_name, params, response)
+                return (response, False)
+
+            if intent_name == "show_round":
+                if not match:
+                    response = (
+                        "Невалиден формат. Очаква се: Покажи кръг <N> <лига> <сезон>."
+                    )
+                    log_command(text, intent_name, None, response)
+                    return (response, False)
+                response, params = handlers_matches.handle_show_round(match)
+                log_command(text, intent_name, params, response)
+                return (response, False)
+
+            if intent_name == "select_match":
+                if not match:
+                    response = "Невалиден формат. Очаква се: Избери мач <match_id>."
+                    log_command(text, intent_name, None, response)
+                    return (response, False)
+                response, params = handlers_matches.handle_select_match(match)
+                log_command(text, intent_name, params, response)
+                return (response, False)
+
+            if intent_name == "save_result":
+                if not match:
+                    response = "Невалиден формат. Очаква се: Резултат <Домакин>-<Гост> <X>:<Y> запиши."
+                    log_command(text, intent_name, None, response)
+                    return (response, False)
+                response, params = handlers_matches.handle_save_result(match)
+                log_command(text, intent_name, params, response)
+                return (response, False)
+
+            if intent_name == "add_goal":
+                if not match:
+                    response = "Невалиден формат. Очаква се: Гол <Играч> <Отбор> <минута> минута."
+                    log_command(text, intent_name, None, response)
+                    return (response, False)
+                response, params = handlers_matches.handle_add_goal(match)
+                log_command(text, intent_name, params, response)
+                return (response, False)
+
+            if intent_name == "add_card":
+                if not match:
+                    response = "Невалиден формат. Очаква се: Картон <Играч> <Отбор> <Y/R> <минута>."
+                    log_command(text, intent_name, None, response)
+                    return (response, False)
+                response, params = handlers_matches.handle_add_card(match)
+                log_command(text, intent_name, params, response)
+                return (response, False)
+
+            if intent_name == "show_events":
+                response, params = handlers_matches.handle_show_events(match)
+                log_command(text, intent_name, params, response)
+                return (response, False)
 
         except Exception as e:
-            return (f"Възникна грешка при обработка: {e}", False)
+            response = f"Възникна грешка при обработка: {e}"
+            log_command(text, intent_name, None, response)
+            return (response, False)
 
         return ("Командата е разпозната, но няма обработчик.", False)
 

@@ -1,4 +1,4 @@
-from database.db import execute_query, get_connection
+from src.db import execute_query, get_connection
 from typing import Optional, List, Dict, Any
 import re
 
@@ -387,9 +387,9 @@ def _create_round_robin(team_ids: List[int]) -> Dict[int, List[tuple]]:
         Dictionary mapping round number to list of (home, away) tuples
     """
     # If odd number of teams, add a "BYE" (None)
-    teams = list(team_ids)
+    teams: List[Optional[int]] = list(team_ids)
     if len(teams) % 2 == 1:
-        teams.append(None)
+        teams.append(None)  # type: ignore[arg-type]
 
     n = len(teams)
     num_rounds = n - 1
