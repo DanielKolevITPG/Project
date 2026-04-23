@@ -7,9 +7,15 @@ from typing import Any, List, Optional, Tuple
 _lock = threading.Lock()
 _conn: Optional[sqlite3.Connection] = None
 
+
+def _get_env_db_path() -> Optional[str]:
+    return os.environ.get("TEST_DB_PATH") or os.environ.get("DB_PATH")
+
+
 def _default_db_path() -> str:
     base = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     return os.path.join(base, "data.db")
+
 
 def get_connection(db_path: Optional[str] = None) -> sqlite3.Connection:
     """
@@ -17,7 +23,7 @@ def get_connection(db_path: Optional[str] = None) -> sqlite3.Connection:
     """
     global _conn
     if db_path is None:
-        db_path = _default_db_path()
+        db_path = _get_env_db_path() or _default_db_path()
 
     if _conn is None:
         with _lock:
@@ -30,8 +36,14 @@ def get_connection(db_path: Optional[str] = None) -> sqlite3.Connection:
                     raise RuntimeError(f"Failed to open database '{db_path}': {e}")
     return _conn
 
-def execute_query(sql: str, params: Tuple = (), commit: bool = False,
-                  fetchone: bool = False, fetchall: bool = False) -> Any:
+
+def execute_query(
+    sql: str,
+    params: Tuple = (),
+    commit: bool = False,
+    fetchone: bool = False,
+    fetchall: bool = False,
+) -> Any:
     """
     Execute a query with proper error handling.
     Use fetchone or fetchall to return results.

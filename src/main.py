@@ -6,14 +6,18 @@ import io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8")
 
-from database import db as database_db
-from chatbot.router import bot
-from services import clubs_service
-import utils.logger as logger
+# Ensure project root is importable when running `python src/main.py`
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-LOG_FILE = os.path.join(BASE_DIR, "commands.log")
-SCHEMA_FILE = os.path.join(BASE_DIR, "sql", "schema.sql")
+from src.database import db as database_db
+from src.chatbot.router import bot
+from src.services import clubs_service
+
+BASE_DIR = PROJECT_ROOT
+LOG_FILE = os.path.join(PROJECT_ROOT, "commands.log")
+SCHEMA_FILE = os.path.join(PROJECT_ROOT, "sql", "schema.sql")
 
 
 def setup_logging():
@@ -33,6 +37,25 @@ def init_db():
         with open(SCHEMA_FILE, "r", encoding="utf-8") as f:
             script = f.read()
         conn.executescript(script)
+
+        # Lightweight migrations for older databases
+        # - matches.status was added in phase 6
+        cur = conn.cursor()
+        cur.execute("PRAGMA table_info(matches)")
+        cols = [r[1] for r in cur.fetchall()]
+        if "status" not in cols:
+            cur.execute(
+                "ALTER TABLE matches ADD COLUMN status TEXT NOT NULL DEFAULT 'scheduled'"
+            )
+            # Best-effort backfill: if score exists -> played
+            cur.execute(
+                """
+                UPDATE matches
+                SET status = 'played'
+                WHERE home_goals IS NOT NULL AND away_goals IS NOT NULL
+                """
+            )
+
         conn.commit()
     except FileNotFoundError:
         raise RuntimeError("Schema file not found. Ensure sql/schema.sql exists.")
@@ -83,8 +106,6 @@ def main_loop():
 
         response, exit_flag = bot.handle(user_input)
         print(response)
-
-        logging.info(f"INPUT: {user_input} | OUTPUT: {response}")
 
         if exit_flag:
             break
