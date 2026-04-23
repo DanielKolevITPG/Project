@@ -39,6 +39,18 @@ From project root:
   python src/main.py
   ```
 
+## UI (Web)
+
+This project also includes a small local web UI that talks to the existing chatbot.
+
+Run:
+```bash
+python src/ui_server.py
+```
+
+Open:
+- http://127.0.0.1:8000
+
 The first run creates data.db and applies schema.
 
 ## Available Commands (Bulgarian)
