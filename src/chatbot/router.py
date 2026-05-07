@@ -15,6 +15,7 @@ from src.services import clubs_service
 from src.services import transfers_service
 from src.services import leagues_service
 from src.chatbot import handlers_matches
+from src.chatbot import handlers_standings
 from src.utils.logger import log_command
 
 INTENTS_FILE = os.path.join(os.path.dirname(__file__), "..", "intents.json")
@@ -622,6 +623,20 @@ class Chatbot:
 
             if intent_name == "show_events":
                 response, params = handlers_matches.handle_show_events(match)
+                log_command(text, intent_name, params, response)
+                return (response, False)
+
+            if intent_name == "show_standings":
+                if not match:
+                    response = "Невалиден формат. Очаква се: Покажи класиране <лига> <сезон>."
+                    log_command(text, intent_name, None, response)
+                    return (response, False)
+                response, params = handlers_standings.handle_show_standings(match)
+                log_command(text, intent_name, params, response)
+                return (response, False)
+
+            if intent_name == "refresh_standings":
+                response, params = handlers_standings.handle_refresh_standings(match)
                 log_command(text, intent_name, params, response)
                 return (response, False)
 
