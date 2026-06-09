@@ -14,6 +14,7 @@ from src.services.players_service import (
 from src.services import clubs_service
 from src.services import transfers_service
 from src.services import leagues_service
+from ai.ai_service import get_match_prediction, AIPredictionError
 from src.chatbot import handlers_matches
 from src.chatbot import handlers_standings
 from src.utils.logger import log_command
@@ -639,6 +640,33 @@ class Chatbot:
                 response, params = handlers_standings.handle_refresh_standings(match)
                 log_command(text, intent_name, params, response)
                 return (response, False)
+
+            if intent_name == "predict_match":
+                home = (self._extract_group(match, "home") or "").strip()
+                away = (self._extract_group(match, "away") or "").strip()
+
+                if not home or not away:
+                    response = "Недостатъчно данни. Очакван формат: Прогноза <Отбор1> срещу <Отбор2>"
+                    log_command(text, intent_name, {"home": home, "away": away}, response)
+                    return (response, False)
+
+                try:
+                    result = get_match_prediction(home, away)
+                    response = (
+                        f"Победа {result.home_team}: {result.home_win_pct}%\n"
+                        f"Равен: {result.draw_pct}%\n"
+                        f"Победа {result.away_team}: {result.away_win_pct}%"
+                    )
+                    log_command(text, intent_name, {"home": home, "away": away}, response)
+                    return (response, False)
+                except AIPredictionError as e:
+                    response = f"Грешка: {e}"
+                    log_command(text, intent_name, {"home": home, "away": away}, response)
+                    return (response, False)
+                except Exception as e:
+                    response = f"Възникна грешка при прогнозата: {e}"
+                    log_command(text, intent_name, {"home": home, "away": away}, response)
+                    return (response, False)
 
         except Exception as e:
             response = f"Възникна грешка при обработка: {e}"
