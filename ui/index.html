@@ -31,6 +31,19 @@
 
       <section class="workspace">
         <aside class="side panel-soft" aria-label="Quick commands panel">
+          <div class="side-head">Навигация</div>
+          <p class="side-copy">Прегледай лиги, отбори и мачове без да пишеш команда.</p>
+          <section class="browser" aria-label="League and team browser">
+            <div class="browser-tabs" role="tablist" aria-label="Data menu">
+              <button class="menu-btn active" data-menu="leagues" type="button" role="tab" aria-selected="true">Лиги</button>
+              <button class="menu-btn" data-menu="teams" type="button" role="tab" aria-selected="false">Отбори</button>
+              <button class="menu-btn" data-menu="matches" type="button" role="tab" aria-selected="false">Мачове</button>
+            </div>
+            <label class="picker-label" for="leaguePicker">Избрана лига</label>
+            <select id="leaguePicker" class="picker" aria-label="League picker"></select>
+            <div id="menuContent" class="menu-content" aria-live="polite"></div>
+          </section>
+
           <div class="side-head">Бързи команди</div>
           <p class="side-copy">Използвай готови заявки или напиши собствена команда в полето вдясно.</p>
           <div class="chips" aria-label="Quick commands">
@@ -41,6 +54,12 @@
             <button class="chip" data-cmd="Покажи кръг 1 Първа Лига 2024/2025" type="button">Кръг 1</button>
             <button class="chip" data-cmd="Покажи класиране Първа Лига 2024/2025" type="button">Класиране</button>
           </div>
+
+          <div class="logs-head-row">
+            <div class="side-head">Command logs</div>
+            <button id="btnRefreshLogs" class="btn ghost btn-mini" type="button">Обнови</button>
+          </div>
+          <div id="logs" class="logs" aria-live="polite"></div>
         </aside>
 
         <section class="panel main-panel">
