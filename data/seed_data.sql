@@ -159,55 +159,55 @@ WHERE full_name = 'Андреа Христов';
 -- Round 1
 -- ============================================
 INSERT INTO matches (league_id, round_no, home_club_id, away_club_id, home_goals, away_goals, status) VALUES
-((SELECT id FROM leagues WHERE name = 'Първа лига'), 1,
+((SELECT id FROM leagues WHERE name = 'Първа Лига'), 1,
  (SELECT id FROM clubs WHERE name = 'Левски София'), (SELECT id FROM clubs WHERE name = 'ЦСКА София'), 2, 1, 'played'),
-((SELECT id FROM leagues WHERE name = 'Първа лига'), 1,
+((SELECT id FROM leagues WHERE name = 'Първа Лига'), 1,
  (SELECT id FROM clubs WHERE name = 'Лудогорец Разград'), (SELECT id FROM clubs WHERE name = 'Ботев Пловдив'), 3, 0, 'played'),
-((SELECT id FROM leagues WHERE name = 'Първа лига'), 1,
+((SELECT id FROM leagues WHERE name = 'Първа Лига'), 1,
  (SELECT id FROM clubs WHERE name = 'Славия София'), (SELECT id FROM clubs WHERE name = 'Берое Стара Загора'), 1, 1, 'played'),
-((SELECT id FROM leagues WHERE name = 'Първа лига'), 1,
+((SELECT id FROM leagues WHERE name = 'Първа Лига'), 1,
  (SELECT id FROM clubs WHERE name = 'Черно море Варна'), (SELECT id FROM clubs WHERE name = 'Локомотив Пловдив'), 0, 2, 'played');
 
 -- Round 2
 INSERT INTO matches (league_id, round_no, home_club_id, away_club_id, home_goals, away_goals, status) VALUES
-((SELECT id FROM leagues WHERE name = 'Първа лига'), 2,
+((SELECT id FROM leagues WHERE name = 'Първа Лига'), 2,
  (SELECT id FROM clubs WHERE name = 'ЦСКА София'), (SELECT id FROM clubs WHERE name = 'Лудогорец Разград'), 1, 2, 'played'),
-((SELECT id FROM leagues WHERE name = 'Първа лига'), 2,
+((SELECT id FROM leagues WHERE name = 'Първа Лига'), 2,
  (SELECT id FROM clubs WHERE name = 'Ботев Пловдив'), (SELECT id FROM clubs WHERE name = 'Славия София'), 2, 1, 'played'),
-((SELECT id FROM leagues WHERE name = 'Първа лига'), 2,
+((SELECT id FROM leagues WHERE name = 'Първа Лига'), 2,
  (SELECT id FROM clubs WHERE name = 'Берое Стара Загора'), (SELECT id FROM clubs WHERE name = 'Черно море Варна'), 0, 1, 'played'),
-((SELECT id FROM leagues WHERE name = 'Първа лига'), 2,
+((SELECT id FROM leagues WHERE name = 'Първа Лига'), 2,
  (SELECT id FROM clubs WHERE name = 'Локомотив Пловдив'), (SELECT id FROM clubs WHERE name = 'Левски София'), 1, 1, 'played');
 
 -- Round 3
 INSERT INTO matches (league_id, round_no, home_club_id, away_club_id, home_goals, away_goals, status) VALUES
-((SELECT id FROM leagues WHERE name = 'Първа лига'), 3,
+((SELECT id FROM leagues WHERE name = 'Първа Лига'), 3,
  (SELECT id FROM clubs WHERE name = 'Левски София'), (SELECT id FROM clubs WHERE name = 'Ботев Пловдив'), 2, 0, 'played'),
-((SELECT id FROM leagues WHERE name = 'Първа лига'), 3,
+((SELECT id FROM leagues WHERE name = 'Първа Лига'), 3,
  (SELECT id FROM clubs WHERE name = 'Лудогорец Разград'), (SELECT id FROM clubs WHERE name = 'Берое Стара Загора'), 4, 1, 'played'),
-((SELECT id FROM leagues WHERE name = 'Първа лига'), 3,
+((SELECT id FROM leagues WHERE name = 'Първа Лига'), 3,
  (SELECT id FROM clubs WHERE name = 'Славия София'), (SELECT id FROM clubs WHERE name = 'Локомотив Пловдив'), 0, 3, 'played'),
-((SELECT id FROM leagues WHERE name = 'Първа лига'), 3,
+((SELECT id FROM leagues WHERE name = 'Първа Лига'), 3,
  (SELECT id FROM clubs WHERE name = 'Черно море Варна'), (SELECT id FROM clubs WHERE name = 'ЦСКА София'), 1, 1, 'played');
 
 -- Round 4
 INSERT INTO matches (league_id, round_no, home_club_id, away_club_id, home_goals, away_goals, status) VALUES
-((SELECT id FROM leagues WHERE name = 'Първа лига'), 4,
+((SELECT id FROM leagues WHERE name = 'Първа Лига'), 4,
  (SELECT id FROM clubs WHERE name = 'ЦСКА София'), (SELECT id FROM clubs WHERE name = 'Славия София'), 3, 2, 'played'),
-((SELECT id FROM leagues WHERE name = 'Първа лига'), 4,
+((SELECT id FROM leagues WHERE name = 'Първа Лига'), 4,
  (SELECT id FROM clubs WHERE name = 'Ботев Пловдив'), (SELECT id FROM clubs WHERE name = 'Черно море Варна'), 1, 2, 'played'),
-((SELECT id FROM leagues WHERE name = 'Първа лига'), 4,
+((SELECT id FROM leagues WHERE name = 'Първа Лига'), 4,
  (SELECT id FROM clubs WHERE name = 'Берое Стара Загора'), (SELECT id FROM clubs WHERE name = 'Левски София'), 0, 2, 'played'),
-((SELECT id FROM leagues WHERE name = 'Първа лига'), 4,
+((SELECT id FROM leagues WHERE name = 'Първа Лига'), 4,
  (SELECT id FROM clubs WHERE name = 'Локомотив Пловдив'), (SELECT id FROM clubs WHERE name = 'Лудогорец Разград'), 1, 4, 'played');
 
 -- Round 5
 INSERT INTO matches (league_id, round_no, home_club_id, away_club_id, home_goals, away_goals, status) VALUES
-((SELECT id FROM leagues WHERE name = 'Първа лига'), 5,
+((SELECT id FROM leagues WHERE name = 'Първа Лига'), 5,
  (SELECT id FROM clubs WHERE name = 'Левски София'), (SELECT id FROM clubs WHERE name = 'Черно море Варна'), 1, 0, 'played'),
-((SELECT id FROM leagues WHERE name = 'Първа лига'), 5,
+((SELECT id FROM leagues WHERE name = 'Първа Лига'), 5,
  (SELECT id FROM clubs WHERE name = 'Лудогорец Разград'), (SELECT id FROM clubs WHERE name = 'ЦСКА София'), 2, 2, 'played'),
-((SELECT id FROM leagues WHERE name = 'Първа лига'), 5,
+((SELECT id FROM leagues WHERE name = 'Първа Лига'), 5,
  (SELECT id FROM clubs WHERE name = 'Славия София'), (SELECT id FROM clubs WHERE name = 'Ботев Пловдив'), 1, 2, 'played'),
-((SELECT id FROM leagues WHERE name = 'Първа лига'), 5,
+((SELECT id FROM leagues WHERE name = 'Първа Лига'), 5,
  (SELECT id FROM clubs WHERE name = 'Берое Стара Загора'), (SELECT id FROM clubs WHERE name = 'Локомотив Пловдив'), 1, 3, 'played');

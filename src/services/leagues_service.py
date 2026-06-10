@@ -386,39 +386,34 @@ def _create_round_robin(team_ids: List[int]) -> Dict[int, List[tuple]]:
     Returns:
         Dictionary mapping round number to list of (home, away) tuples
     """
-    # If odd number of teams, add a "BYE" (None)
     teams: List[Optional[int]] = list(team_ids)
     if len(teams) % 2 == 1:
-        teams.append(None)  # type: ignore[arg-type]
+        teams.append(None)
 
     n = len(teams)
     num_rounds = n - 1
-
-    # Fixed position for first team, rotate others
-    fixed = teams[0]
-    rotating = teams[1:]
-
-    schedule = {}
+    half = n // 2
+    schedule: Dict[int, List[tuple]] = {}
 
     for round_num in range(1, num_rounds + 1):
-        matches = []
+        left = teams[:half]
+        right = list(reversed(teams[half:]))
 
-        # First team plays against last team in rotating list
-        opponent = rotating[-1]
-        if fixed is not None and opponent is not None:
-            matches.append((fixed, opponent))
+        matches: List[tuple] = []
+        for i, (team_a, team_b) in enumerate(zip(left, right)):
+            if team_a is None or team_b is None:
+                continue
 
-        # Remaining teams are paired: 1st with last, 2nd with 2nd last, etc.
-        for i in range(len(rotating) // 2 - 1):
-            team1 = rotating[i]
-            team2 = rotating[len(rotating) - 2 - i]
-            if team1 is not None and team2 is not None:
-                matches.append((team1, team2))
+            if i == 0 and round_num % 2 == 0:
+                matches.append((team_b, team_a))
+            elif i % 2 == 0:
+                matches.append((team_a, team_b))
+            else:
+                matches.append((team_b, team_a))
 
         schedule[round_num] = matches
 
-        # Rotate the list (last element goes to front)
-        rotating = [rotating[-1]] + rotating[:-1]
+        teams = [teams[0]] + [teams[-1]] + teams[1:-1]
 
     return schedule
 

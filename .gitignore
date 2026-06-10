@@ -214,3 +214,10 @@ env/
 ENV/
 .vscode/
 .idea/
+
+# Local UI QA artifacts
+ui-upgraded.png
+.playwright-mcp/
+
+# Local OpenCode session artifacts
+.omo/
