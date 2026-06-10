@@ -18,8 +18,8 @@
         <div class="brand">
           <div class="mark" aria-hidden="true">FM</div>
           <div class="title">
-            <div class="name">Football Manager</div>
-            <div class="hint">UI върху чатбота (Phase 2–7)</div>
+            <div class="name">Football Manager Console</div>
+            <div class="hint">UI върху чатбота за клубове, играчи, трансфери и лиги</div>
           </div>
         </div>
 
@@ -29,31 +29,41 @@
         </div>
       </header>
 
-      <section class="panel">
-        <div id="feed" class="feed" aria-live="polite"></div>
-
-        <form id="composer" class="composer" autocomplete="off">
-          <div class="field">
-            <input
-              id="command"
-              name="command"
-              type="text"
-              placeholder="Напиши команда… (напр. Покажи всички клубове)"
-              spellcheck="false"
-              autofocus
-            />
+      <section class="workspace">
+        <aside class="side panel-soft" aria-label="Quick commands panel">
+          <div class="side-head">Бързи команди</div>
+          <p class="side-copy">Използвай готови заявки или напиши собствена команда в полето вдясно.</p>
+          <div class="chips" aria-label="Quick commands">
+            <button class="chip" data-cmd="Покажи всички клубове" type="button">Клубове</button>
+            <button class="chip" data-cmd="Покажи всички играчи" type="button">Играчи</button>
+            <button class="chip" data-cmd="Покажи програма Първа Лига 2024/2025" type="button">Програма</button>
+            <button class="chip" data-cmd="Избери лига Първа Лига 2024/2025" type="button">Избери лига</button>
+            <button class="chip" data-cmd="Покажи кръг 1 Първа Лига 2024/2025" type="button">Кръг 1</button>
+            <button class="chip" data-cmd="Покажи класиране Първа Лига 2024/2025" type="button">Класиране</button>
           </div>
-          <button id="btnSend" class="btn primary" type="submit">Изпрати</button>
-        </form>
+        </aside>
 
-        <div class="chips" aria-label="Quick commands">
-          <button class="chip" data-cmd="Покажи всички клубове" type="button">Клубове</button>
-          <button class="chip" data-cmd="Покажи всички играчи" type="button">Играчи</button>
-          <button class="chip" data-cmd="Покажи програма Първа Лига 2024/2025" type="button">Програма</button>
-          <button class="chip" data-cmd="Избери лига Първа Лига 2024/2025" type="button">Избери лига</button>
-          <button class="chip" data-cmd="Покажи кръг 1 Първа Лига 2024/2025" type="button">Кръг 1</button>
-          <button class="chip" data-cmd="Покажи класиране Първа Лига 2024/2025" type="button">Класиране</button>
-        </div>
+        <section class="panel main-panel">
+          <div class="panel-top">
+            <div class="panel-label">Conversation</div>
+            <div class="live" id="statusDot" aria-hidden="true"></div>
+          </div>
+          <div id="feed" class="feed" aria-live="polite"></div>
+
+          <form id="composer" class="composer" autocomplete="off">
+            <div class="field">
+              <input
+                id="command"
+                name="command"
+                type="text"
+                placeholder="Напиши команда… (напр. Покажи всички клубове)"
+                spellcheck="false"
+                autofocus
+              />
+            </div>
+            <button id="btnSend" class="btn primary" type="submit">Изпрати</button>
+          </form>
+        </section>
       </section>
 
       <footer class="foot">

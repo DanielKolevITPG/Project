@@ -5,6 +5,7 @@
   const btnHelp = document.getElementById("btnHelp");
   const btnClear = document.getElementById("btnClear");
   const status = document.getElementById("status");
+  const statusDot = document.getElementById("statusDot");
 
   const pad2 = (n) => (n < 10 ? `0${n}` : `${n}`);
   const timeStamp = () => {
@@ -42,6 +43,12 @@
   const setStatus = (kind, text) => {
     status.classList.remove("bad", "good");
     if (kind) status.classList.add(kind);
+    if (statusDot) {
+      statusDot.classList.remove("bad", "good", "busy");
+      if (kind === "bad") statusDot.classList.add("bad");
+      if (kind === "good") statusDot.classList.add("good");
+      if (!kind) statusDot.classList.add("busy");
+    }
     status.textContent = text;
   };
 

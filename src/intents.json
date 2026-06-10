@@ -17,9 +17,9 @@
     },
     "add_club": {
       "patterns": [
-        "(?i)^добави клуб (?P<name>.+)$",
+        "(?i)^добави клуб (?P<name>(?!.*\\bв\\s+лига\\b).+)$",
         "(?i)^добави_клуб (?P<name>.+)$",
-        "(?i)^add club (?P<name>.+)$"
+        "(?i)^add club (?P<name>(?!.*\\bin\\s+league\\b).+)$"
       ],
       "response": "Attempting to add club..."
     },
